@@ -98,3 +98,53 @@ test("suggestion API requires consent, validates input, hides errors, and limits
     await new Promise(resolve => server.close(resolve));
   }
 });
+test("unanswered chat questions are saved automatically; answered questions are not", async () => {
+  const rag = require("../dist/rag");
+  const originalAsk = rag.askRAG;
+  const originalSave = suggestions.saveSuggestion;
+  const originalError = console.error;
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "maki-auto-suggestions-"));
+  const file = path.join(dir, "suggestions.jsonl");
+  const { app } = require("../dist/server");
+  const server = app.listen(0, "127.0.0.1");
+  await new Promise(resolve => server.once("listening", resolve));
+  const url = "http://127.0.0.1:" + server.address().port + "/ask";
+  const ask = async question => {
+    const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question }) });
+    assert.equal(response.status, 200);
+    return response.json();
+  };
+  try {
+    console.error = () => {};
+    suggestions.saveSuggestion = question => originalSave(question, file);
+    rag.askRAG = async () => ({ answer: rag.REFUSAL, sources: [] });
+    const result = await ask(" What\n is the new course deadline? ");
+    assert.equal(result.unanswered, true);
+    assert.equal(result.suggestionSaved, true);
+    const records = await suggestions.readSuggestions(file);
+    assert.equal(records.length, 1);
+    assert.equal(records[0].question, "What is the new course deadline?");
+    assert.equal(records[0].status, "pending");
+
+    rag.askRAG = async () => ({ answer: "A sourced answer", sources: [] });
+    assert.equal((await ask("A known question")).unanswered, false);
+    assert.equal((await suggestions.readSuggestions(file)).length, 1);
+
+    rag.askRAG = async () => ({ answer: rag.REFUSAL, sources: [] });
+    suggestions.saveSuggestion = async () => { throw new Error("private storage failure"); };
+    const failed = await ask("Another unknown question");
+    assert.equal(failed.answer, rag.REFUSAL);
+    assert.equal(failed.unanswered, true);
+    assert.equal(failed.suggestionSaved, false);
+    assert.ok(!JSON.stringify(failed).includes("private storage failure"));
+  } finally {
+    rag.askRAG = originalAsk;
+    suggestions.saveSuggestion = originalSave;
+    console.error = originalError;
+    server.closeAllConnections();
+    await new Promise(resolve => server.close(resolve));
+    await fs.unlink(file).catch(() => {});
+    await fs.rmdir(dir);
+  }
+});

@@ -1,5 +1,6 @@
 import express from "express";
-import { askRAG, REFUSAL } from "../rag";
+import { askRAG, REFUSAL, sanitizeQuestion } from "../rag";
+import { saveSuggestion } from "../suggestions";
 
 const router = express.Router();
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -37,7 +38,18 @@ router.post("/ask", async (req, res) => {
   try {
     const result = await askRAG(question);
     const unanswered = result.answer === REFUSAL || /^I couldn't find enough reliable information/i.test(result.answer);
-    res.json({ ...result, unanswered });
+    let suggestionSaved = false;
+    const reviewQuestion = sanitizeQuestion(question);
+    if (unanswered && reviewQuestion) {
+      try {
+        await saveSuggestion(reviewQuestion);
+        suggestionSaved = true;
+      } catch (error) {
+        // A review-storage failure must not replace a valid chatbot response.
+        console.error("Cannot save unanswered question:", error);
+      }
+    }
+    res.json({ ...result, unanswered, ...(unanswered ? { suggestionSaved } : {}) });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal server error" });

@@ -77,7 +77,7 @@ function App() {
       }
       const result = await response.json();
       if (typeof result.answer !== "string" || !Array.isArray(result.sources)) throw new Error("The answer could not be loaded. Please try again.");
-      setMessages(previous => [...previous, { role: "assistant", text: result.answer, sources: result.sources, unanswered: result.unanswered === true, question: text }]);
+      setMessages(previous => [...previous, { role: "assistant", text: result.answer, sources: result.sources, unanswered: result.unanswered === true, question: text, suggestionStatus: result.suggestionSaved === true ? "sent" : undefined }]);
     } catch (failure) {
       setError(failure.name === "AbortError" ? "This response took too long. Please try again." : failure.message || "Connection failed. Please try again.");
       setQuestion(text);
@@ -119,9 +119,9 @@ function App() {
               {message.role === "assistant" ? <Answer text={message.text} /> : <div className="message-text">{message.text}</div>}
               {message.sources?.length > 0 && <div className="sources"><p className="eyebrow">FROM THE DOCUMENTS · {message.sources.length} REFERENCES</p>{message.sources.map((source, i) => <details key={i}><summary><span className="source-number">{i + 1}</span><span><strong>{readableTitle(source.title)}</strong>{source.locator && <span className="locator">{source.locator}</span>}</span><span className="source-toggle">+</span></summary><p className="passage">{source.text}</p></details>)}</div>}
               {message.unanswered && <div className="suggestion-box">
-                {message.suggestionStatus === "sent" ? <p role="status"><strong>Thanks for helping Maki grow!</strong><br />Your question is saved for developer review.</p> : <>
+                {message.suggestionStatus === "sent" ? <p role="status"><strong>Thanks for helping Maki grow!</strong><br />Your unanswered question has been saved. Developers can review it and add verified information for future answers.</p> : <>
                   <strong>Help Maki answer this next time</strong>
-                  <p>Send this question to the developers so they can review what information is missing. Please avoid sharing personal information.</p>
+                  <p>We couldn't save this question automatically. You can retry sending it to the developers for review.</p>
                   <button type="button" disabled={message.suggestionStatus === "sending"} onClick={() => submitSuggestion(index)}>
                     {message.suggestionStatus === "sending" ? "Sending…" : "Submit question for review"}
                   </button>
@@ -139,7 +139,7 @@ function App() {
             <textarea id="question" ref={input} value={question} maxLength={299} disabled={pending} rows={2} placeholder="What would you like to know?" onChange={event => setQuestion(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); ask(question); } }} />
             <div className="composer-bottom"><span>{question.length}/299 <span className="keyboard-hint">· Enter to send</span></span><button type="submit" disabled={pending || !question.trim()} aria-label="Send question">{pending ? "Thinking…" : "Ask Maki"}<span aria-hidden="true">↑</span></button></div>
           </form>
-          <p className="fine-print">Answers are based on the provided university documents. Check the references for details.</p>
+          <p className="fine-print">Answers use the provided university documents. Unanswered questions are saved for developer review. Please avoid sharing personal information.</p>
         </footer>
       </main>
     </div>

@@ -107,9 +107,11 @@ retrieval only: the sanitized original question still reaches the security check
 and model, and document text and citation titles stay unchanged.
 ## Unanswered-question suggestion box
 
-When /ask reports an unanswered question, the chat offers "Submit question for
-review." Clicking it explicitly shares that question with the developers. Nothing
-is saved merely by asking a question. Submissions are untrusted review data;
+When /ask cannot answer, it automatically saves the sanitized question for developer
+review and reports suggestionSaved in its response. Answered questions are not saved.
+The chat discloses this before submission and confirms successful saving. If storage
+fails, the chatbot still returns its answer and offers a manual retry button.
+Submissions are untrusted review data;
 they never become retrieval sources, prompts, or model training data automatically.
 
 POST /suggestions accepts { question: string, consent: true }, validates a
