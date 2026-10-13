@@ -103,7 +103,7 @@ test("backend retrieval, guards, chunking, and HTTP behavior", async t => {
         assert.equal(await rag.fallbackReply("what can you do?"), rag.REFUSAL);
       }
       llm.callLLM = async () => "chat: I can help with UMak.";
-      assert.equal((await rag.askRAG("what can you do?")).answer, "I can help with UMak.");
+      assert.equal((await rag.askRAG("what can you do?")).answer, "I can help with University of Makati.");
     });
 
     await t.test("grounded override wording still reaches retrieval and citations omit absent locators", async () => {

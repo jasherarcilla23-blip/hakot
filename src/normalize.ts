@@ -28,6 +28,11 @@ function oneEditApart(a: string, b: string): boolean {
   return shorter.slice(i) === longer.slice(i + 1);
 }
 
+export function expandUniversityName(text: string): string {
+  return text.replace(/\buniversity\s+of\s+makati\s*\(\s*u[ .-]*mak\s*\)/gi, "University of Makati")
+    .replace(/\bu[ .-]*mak\b(?![-_])/gi, "University of Makati");
+}
+
 export function normalizeForRetrieval(question: string): string {
   const corrected = question.replace(/\bu[\s.-]+mak\b/gi, "UMak").replace(/\b[a-z]+\b/gi, word => {
     const lower = word.toLowerCase();
@@ -38,5 +43,5 @@ export function normalizeForRetrieval(question: string): string {
     return matches.length === 1 ? matches[0] : word;
   });
   return corrected.replace(/\buniversity\s+of\s+makati(?:\s*\(UMak\))?|\bUMak\b/gi,
-    "University of Makati (UMak)");
+    "University of Makati");
 }
