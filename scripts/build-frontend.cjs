@@ -8,6 +8,9 @@ async function build() {
   await esbuild.build({
     entryPoints: [path.join(root, "frontend/app.jsx")],
     bundle: true,
+    loader: { ".png": "file" },
+    assetNames: "[name]-[hash]",
+    publicPath: "/assets",
     minify: true,
     outfile: path.join(root, "public/assets/app.js"),
     define: { "process.env.NODE_ENV": '"production"' },

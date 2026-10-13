@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { embed } from "./embeddings";
+import { reformatCampusMap } from "./campus-map";
 import { Chunk, knowledgePath } from "./knowledge";
 
 type DocumentFormat = "auto" | "directory" | "narrative";
@@ -29,27 +30,7 @@ function splitSections(lines: string[], title: string, sections: Section[]): Chu
 function suppliedDocumentChunks(lines: string[], title: string): Chunk[] | undefined {
   const documentTitle = lines.find(line => line.trim())?.trim();
   if (documentTitle === "CAMPUS MAP") {
-    const sections: Section[] = [];
-    let building = "";
-    let floor = "";
-    for (let i = 1; i < lines.length; i++) {
-      const text = lines[i].trim();
-      if (!text || BULLET.test(text)) continue;
-      if (text === text.toUpperCase() && /[A-Z]/.test(text)) {
-        building = text;
-        floor = "";
-      } else if (/^[A-Z]\.\s/.test(text)) {
-        sections.push({ start: i, locator: [building, floor, text].filter(Boolean).join(" / "),
-          context: [building, floor].filter(Boolean).join("\n") });
-      } else {
-        floor = text;
-        const next = lines.slice(i + 1).find(line => line.trim()) || "";
-        if (BULLET.test(next)) {
-          sections.push({ start: i, locator: [building, floor].filter(Boolean).join(" / "), context: building });
-        }
-      }
-    }
-    return splitSections(lines, title, sections);
+    return reformatCampusMap(lines.join("\n"));
   }
   if (documentTitle === "COLLEGE REQUIREMENTS") {
     const college = lines.find(line => /^College of /.test(line))?.trim() || documentTitle;
@@ -205,9 +186,20 @@ export async function ingest(filePaths: string | string[], format: DocumentForma
     ? fs.readdirSync(input).filter(name => /\.txt$/i.test(name)).sort().map(name => path.join(input, name))
     : [input]);
   if (paths.length === 0) throw new Error("No text documents found");
-  const chunks = paths.flatMap(filePath => chunkFile(
-    fs.readFileSync(filePath, "utf8"), path.basename(filePath, path.extname(filePath)), format,
-  ));
+  const chunks = paths.flatMap(filePath => {
+    const content = fs.readFileSync(filePath, "utf8");
+    if (format === "auto" && /^CAMPUS MAP\r?\n/.test(content.trimStart())) {
+      const passages = reformatCampusMap(content, path.basename(filePath));
+      fs.mkdirSync(path.resolve("generated"), { recursive: true });
+      fs.writeFileSync(path.resolve("generated/CAMPUS-MAP.reformatted.txt"),
+        passages.map(chunk => chunk.text).join("\n\n") + "\n");
+      const preparedPath = path.resolve("umak_campus_map_chunks.jsonl");
+      fs.writeFileSync(preparedPath, passages.map(chunk => JSON.stringify(chunk)).join("\n") + "\n");
+      // Embed the prepared passages while retaining original filename/locators.
+      return fs.readFileSync(preparedPath, "utf8").trim().split("\n").map(line => JSON.parse(line) as Chunk);
+    }
+    return chunkFile(content, path.basename(filePath, path.extname(filePath)), format);
+  });
   if (chunks.length === 0) throw new Error("No usable document chunks found");
   const embeddings = await embed(chunks.map(chunk => chunk.text));
   fs.mkdirSync(path.dirname(knowledgePath), { recursive: true });

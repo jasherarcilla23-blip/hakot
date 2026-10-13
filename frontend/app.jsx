@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
 import Answer from "./Answer";
+import Avatar from "./Avatar";
 
 const topics = [
   { icon: "01", title: "Scholarships", text: "Explore grants and requirements", question: "What scholarships are available at UMak?" },
@@ -61,7 +62,7 @@ function App() {
   return (
     <div className="app">
       <aside className="sidebar">
-        <a href="/" className="brand" aria-label="Hakot home"><span className="brand-mark">h.</span><span>hakot<span className="brand-caption">YOUR UMAK GUIDE</span></span></a>
+        <a href="/" className="brand" aria-label="Maki home"><Avatar /><span>Maki<span className="brand-caption">YOUR UMAK GUIDE</span></span></a>
         <div className="sidebar-body">
           <p className="eyebrow">A LITTLE GUIDANCE GOES A LONG WAY</p>
           <h2>University life,<br /><span>made clearer.</span></h2>
@@ -77,18 +78,18 @@ function App() {
         <header className="topbar"><span>THE STUDENT HELP DESK</span><span className="document-note"><i /> Answers with document references</span></header>
         <div className="conversation">
           <section className="welcome">
-            <span className="welcome-label">WELCOME, HERON</span>
+            <div className="welcome-greeting"><Avatar /><div><span className="welcome-label">HI, HERON! I'M MAKI</span><p>Your friendly guide to life at UMak.</p></div></div>
             <h1>A question today.<br /><span>A clearer path ahead.</span></h1>
             <p>Ask about UMak scholarships, college requirements,<br className="desktop-break" /> campus locations, and university offices.</p>
           </section>
           {messages.length === 0 && <div className="suggestions">{topics.map(topic => <button key={topic.title} onClick={() => ask(topic.question)} disabled={pending}><span className="suggestion-number">{topic.icon}</span><strong>{topic.title}</strong><span>{topic.text}</span><span className="suggestion-arrow">↗</span></button>)}</div>}
           <section className="messages" role="log" aria-label="Conversation" aria-live="polite" aria-relevant="additions">
             {messages.map((message, index) => <article key={index} className={"message " + message.role}>
-              <div className="message-label">{message.role === "user" ? "YOU" : "HAKOT"}</div>
+              <div className="message-header"><Avatar user={message.role === "user"} /><div className="message-label">{message.role === "user" ? "You" : "Maki"}<span className="message-caption">{message.role === "user" ? "Your question" : "Your UMak guide"}</span></div></div>
               {message.role === "assistant" ? <Answer text={message.text} /> : <div className="message-text">{message.text}</div>}
               {message.sources?.length > 0 && <div className="sources"><p className="eyebrow">FROM THE DOCUMENTS · {message.sources.length} REFERENCES</p>{message.sources.map((source, i) => <details key={i}><summary><span className="source-number">{i + 1}</span><span><strong>{readableTitle(source.title)}</strong>{source.locator && <span className="locator">{source.locator}</span>}</span><span className="source-toggle">+</span></summary><p className="passage">{source.text}</p></details>)}</div>}
             </article>)}
-            {pending && <div className="loading" role="status"><span className="loading-dot" /> Checking the university documents…</div>}
+            {pending && <div className="loading" role="status"><Avatar /><span className="loading-dot" /> Maki is checking the university documents…</div>}
           </section>
           {error && <div role="alert" className="error">{error}</div>}
           <div ref={bottom} />
@@ -97,7 +98,7 @@ function App() {
           <form onSubmit={event => { event.preventDefault(); ask(question); }} className="composer">
             <label className="sr-only" htmlFor="question">Your university question</label>
             <textarea id="question" ref={input} value={question} maxLength={299} disabled={pending} rows={2} placeholder="What would you like to know?" onChange={event => setQuestion(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); ask(question); } }} />
-            <div className="composer-bottom"><span>{question.length}/299 <span className="keyboard-hint">· Enter to send</span></span><button type="submit" disabled={pending || !question.trim()} aria-label="Send question">{pending ? "Thinking…" : "Ask Hakot"}<span aria-hidden="true">↑</span></button></div>
+            <div className="composer-bottom"><span>{question.length}/299 <span className="keyboard-hint">· Enter to send</span></span><button type="submit" disabled={pending || !question.trim()} aria-label="Send question">{pending ? "Thinking…" : "Ask Maki"}<span aria-hidden="true">↑</span></button></div>
           </form>
           <p className="fine-print">Answers are based on the provided university documents. Check the references for details.</p>
         </footer>

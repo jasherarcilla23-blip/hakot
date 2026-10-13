@@ -121,7 +121,7 @@ test("backend retrieval, guards, chunking, and HTTP behavior", async t => {
       assert.equal(result.sources.length, 2);
       assert.ok(!("score" in result.sources[0]));
       assert.ok(!("locator" in result.sources[1]));
-      llm.callLLM = async system => system.match(/HAKOT_INTERNAL_[\w-]+/)[0].toLowerCase();
+      llm.callLLM = async system => system.match(/MAKI_INTERNAL_[\w-]+/)[0].toLowerCase();
       const leaked = await rag.askRAG("admissions?");
       assert.equal(leaked.answer, rag.REFUSAL);
       assert.deepEqual(leaked.sources, []);
@@ -193,12 +193,14 @@ test("supplied documents preserve passages, hierarchy, and Unicode bullets", () 
     const combined = chunks.map(chunk => chunk.text).join("\n");
     // The document's top title is metadata, not a passage.
     for (const line of source.trim().split(/\r?\n/).slice(1).filter(line => line.trim())) {
-      assert.ok(combined.includes(line.trim()), name + ": missing source line " + line);
+      assert.ok(combined.includes(name === "CAMPUS-MAP.txt" ? line.trim().replace(/^[\u25cf\u25cb\u2022\u27a2*-]\s+/, "") : line.trim()), name + ": missing source line " + line);
     }
     if (name === "CAMPUS-MAP.txt") {
       const clinic = chunks.find(chunk => chunk.text.includes("Medical and Dental Clinic"));
       assert.equal(clinic.locator, "ADMIN BUILDING / Ground Floor / A. North Wing");
       assert.ok(clinic.text.includes("ADMIN BUILDING"));
+      assert.equal(clinic.title, "CAMPUS-MAP.txt");
+      assert.ok(clinic.text.startsWith("Medical and Dental Clinic (MDC) is located in"));
     }
     if (name === "COLLEGE-REQUIREMENTS.txt") {
       const program = chunks.find(chunk => chunk.locator.endsWith("/ Bachelor of Science in Information Technology"));

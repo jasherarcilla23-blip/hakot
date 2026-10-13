@@ -1,5 +1,5 @@
 {
-    "name":  "hakot",
+    "name":  "maki",
     "version":  "1.0.0",
     "description":  "umak infotech olympics",
     "main":  "dist/server.js",
@@ -8,7 +8,7 @@
                     "start":  "node dist/server.js",
                     "dev":  "npm start",
                     "ingest":  "npm run build \u0026\u0026 node dist/ingest.js",
-                    "test":  "npm run build \u0026\u0026 node --test tests/backend.test.cjs tests/answer.test.cjs",
+                    "test":  "npm run build \u0026\u0026 node --test tests/backend.test.cjs tests/answer.test.cjs tests/cache.test.cjs tests/location.test.cjs tests/normalize.test.cjs",
                     "build:server":  "tsc",
                     "build:client":  "node scripts/build-frontend.cjs",
                     "prestart":  "npm run build"

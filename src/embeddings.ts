@@ -7,6 +7,7 @@ export async function embed(texts: string[]): Promise<number[][]> {
   const response = await axios.post(`${OLLAMA_URL}/api/embed`, {
     model: "nomic-embed-text",
     input: texts,
+    keep_alive: "30m",
   }, { timeout: 120000 });
   const vectors: unknown = response.data.embeddings;
   if (!Array.isArray(vectors) || vectors.length !== texts.length ||

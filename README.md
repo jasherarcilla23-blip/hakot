@@ -1,4 +1,4 @@
-# Hakot
+# Maki
 
 University assistant backend using Node.js, TypeScript, Express, and local Ollama.
 The React chat frontend is served by Express at http://localhost:3000/.
@@ -76,3 +76,32 @@ shows loading and error states, and renders source passages safely as React text
 Frontend source lives in frontend/; scripts/build-frontend.cjs emits public/.
 Use npm run build:client after frontend edits. Stop and restart the server after
 backend edits. No cloud deployment is needed for this local Ollama application.
+## Campus-map preparation and latency
+
+Ingestion deterministically turns each original campus-map bullet into one location
+sentence, repeating its building, floor, and wing. The original
+documents/CAMPUS-MAP.txt stays unchanged. Generated passages are saved to
+generated/CAMPUS-MAP.reformatted.txt and umak_campus_map_chunks.jsonl, then the
+JSONL passages are batch-embedded. Citation titles remain CAMPUS-MAP.txt with
+locators taken from the original hierarchy. Original names and spellings are preserved.
+
+Retrieval and model requests use bounded, exact-key caches (100 entries, five-minute
+TTL) with duplicate in-flight requests shared. Model cache keys include the complete
+system prompt, source block, question, model, and endpoint. Failed requests are not
+cached. Sanitization, rate limits, retrieval thresholds, fallback checks, and output
+guards still run on each request, including cached responses. Source changes require
+ingestion and a server restart, which also clears the caches.
+
+Ollama keeps embedding and generation models warm for 30 minutes, subject to
+available memory. Thinking stays disabled; complete responses are checked before
+delivery. No streaming of unguarded tokens or shortened security prompts is used.
+First-time questions still require model inference; cache speedups apply to exact
+repeats within the same server process.
+## University names and spelling
+
+Retrieval recognizes UMak and University of Makati as the same institution,
+including common aliases such as U-Mak and common misspellings such as umka.
+A bounded university vocabulary handles unique one-edit and adjacent-transposition
+spelling mistakes. Unknown or ambiguous words are left alone. Normalization affects
+retrieval only: the sanitized original question still reaches the security checks
+and model, and document text and citation titles stay unchanged.
