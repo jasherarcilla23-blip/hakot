@@ -150,3 +150,6 @@ vite.config.ts.timestamp-*
 
 # Generated React frontend
 /public/
+
+# Private developer suggestion submissions
+/data/

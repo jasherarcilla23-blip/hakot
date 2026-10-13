@@ -160,7 +160,7 @@ test("backend retrieval, guards, chunking, and HTTP behavior", async t => {
       }
       let response = await post(JSON.stringify({ question: "a".repeat(299) }));
       assert.equal(response.status, 200);
-      assert.deepEqual(await response.json(), { answer: "Hello", sources: [] });
+      assert.deepEqual(await response.json(), { answer: "Hello", sources: [], unanswered: false });
       response = await post("{broken");
       assert.equal(response.status, 400);
       assert.deepEqual(await response.json(), { error: "Invalid request" });

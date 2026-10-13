@@ -1,11 +1,13 @@
 import express, { ErrorRequestHandler } from "express";
 import path from "path";
 import askRouter from "./routes/ask";
+import suggestionsRouter from "./routes/suggestions";
 
 export const app = express();
 app.use(express.json({ limit: "10kb" }));
 app.use(express.static(path.resolve("public")));
 app.use("/", askRouter);
+app.use("/", suggestionsRouter);
 
 const errorHandler: ErrorRequestHandler = (error, _req, res, next) => {
   if (res.headersSent) { next(error); return; }

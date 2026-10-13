@@ -23,6 +23,36 @@ function App() {
 
   useEffect(() => { bottom.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [messages, pending, error]);
 
+
+  const suggestionRequests = useRef(new Set());
+
+  async function submitSuggestion(index) {
+    const message = messages[index];
+    if (!message?.unanswered || message.suggestionStatus === "sent" || suggestionRequests.current.has(index)) return;
+    suggestionRequests.current.add(index);
+    const update = fields => setMessages(previous => previous.map((item, i) => i === index ? { ...item, ...fields } : item));
+    update({ suggestionStatus: "sending", suggestionError: "" });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    try {
+      const response = await fetch("/suggestions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: message.question, consent: true }),
+        signal: controller.signal,
+      });
+      if (!response.ok) throw new Error(response.status === 429
+        ? "Please wait a minute before submitting another suggestion."
+        : "We couldn't save your suggestion. Please try again.");
+      update({ suggestionStatus: "sent" });
+    } catch (failure) {
+      update({ suggestionStatus: "error", suggestionError: failure.name === "AbortError"
+        ? "Submission timed out. Please try again." : failure.message });
+    } finally {
+      clearTimeout(timeout);
+      suggestionRequests.current.delete(index);
+    }
+  }
   async function ask(raw) {
     const text = raw.trim();
     if (!text || raw.length >= 300 || requestActive.current) return;
@@ -47,7 +77,7 @@ function App() {
       }
       const result = await response.json();
       if (typeof result.answer !== "string" || !Array.isArray(result.sources)) throw new Error("The answer could not be loaded. Please try again.");
-      setMessages(previous => [...previous, { role: "assistant", text: result.answer, sources: result.sources }]);
+      setMessages(previous => [...previous, { role: "assistant", text: result.answer, sources: result.sources, unanswered: result.unanswered === true, question: text }]);
     } catch (failure) {
       setError(failure.name === "AbortError" ? "This response took too long. Please try again." : failure.message || "Connection failed. Please try again.");
       setQuestion(text);
@@ -88,7 +118,16 @@ function App() {
               <div className="message-header"><Avatar user={message.role === "user"} /><div className="message-label">{message.role === "user" ? "You" : "Maki"}<span className="message-caption">{message.role === "user" ? "Your question" : "Your UMak guide"}</span></div></div>
               {message.role === "assistant" ? <Answer text={message.text} /> : <div className="message-text">{message.text}</div>}
               {message.sources?.length > 0 && <div className="sources"><p className="eyebrow">FROM THE DOCUMENTS · {message.sources.length} REFERENCES</p>{message.sources.map((source, i) => <details key={i}><summary><span className="source-number">{i + 1}</span><span><strong>{readableTitle(source.title)}</strong>{source.locator && <span className="locator">{source.locator}</span>}</span><span className="source-toggle">+</span></summary><p className="passage">{source.text}</p></details>)}</div>}
-            </article>)}
+              {message.unanswered && <div className="suggestion-box">
+                {message.suggestionStatus === "sent" ? <p role="status"><strong>Thanks for helping Maki grow!</strong><br />Your question is saved for developer review.</p> : <>
+                  <strong>Help Maki answer this next time</strong>
+                  <p>Send this question to the developers so they can review what information is missing. Please avoid sharing personal information.</p>
+                  <button type="button" disabled={message.suggestionStatus === "sending"} onClick={() => submitSuggestion(index)}>
+                    {message.suggestionStatus === "sending" ? "Sending…" : "Submit question for review"}
+                  </button>
+                  {message.suggestionError && <p className="suggestion-error" role="alert">{message.suggestionError}</p>}
+                </>}
+              </div>}            </article>)}
             {pending && <div className="loading" role="status"><Avatar /><span className="loading-dot" /> Maki is checking the university documents…</div>}
           </section>
           {error && <div role="alert" className="error">{error}</div>}

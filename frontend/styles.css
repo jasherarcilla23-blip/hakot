@@ -44,3 +44,10 @@
 .welcome-greeting p{font-size:13px;color:#6c7789;margin:4px 0 0}
 .loading .avatar{width:32px;height:32px;flex-basis:32px}
 @media(max-width:700px){.brand .avatar{width:41px;height:41px;flex-basis:41px}.welcome-greeting .avatar{width:54px;height:54px;flex-basis:54px}.message-header{gap:9px}.message-caption{font-size:9px}}
+.suggestion-box{margin-top:20px;padding:17px;background:#f2f7f4;border:1px solid #dce8df;border-radius:10px;font-size:12px;color:#52705d}
+.suggestion-box>strong,.suggestion-box p strong{color:#355b45;font-size:13px}
+.suggestion-box p{margin:7px 0 12px;line-height:1.7}
+.suggestion-box p:last-child{margin-bottom:0}
+.suggestion-box button{border:1px solid #a7c2ae;background:#fff;color:#355b45;border-radius:7px;padding:9px 13px;font-size:12px;font-weight:600}
+.suggestion-box button:hover:not(:disabled){background:#e4efe7}
+.suggestion-box .suggestion-error{color:#923c28}

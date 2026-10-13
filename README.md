@@ -105,3 +105,25 @@ A bounded university vocabulary handles unique one-edit and adjacent-transpositi
 spelling mistakes. Unknown or ambiguous words are left alone. Normalization affects
 retrieval only: the sanitized original question still reaches the security checks
 and model, and document text and citation titles stay unchanged.
+## Unanswered-question suggestion box
+
+When /ask reports an unanswered question, the chat offers "Submit question for
+review." Clicking it explicitly shares that question with the developers. Nothing
+is saved merely by asking a question. Submissions are untrusted review data;
+they never become retrieval sources, prompts, or model training data automatically.
+
+POST /suggestions accepts { question: string, consent: true }, validates a
+nonempty question shorter than 300 characters, sanitizes it, and allows 10
+submissions per minute per IP. It returns { id, status: "pending" }. The IP is
+used for the in-memory rate limit only, not stored with the submission.
+
+Records persist in data/suggestions.jsonl (ignored by Git), with question,
+ID, timestamp, and pending status. SUGGESTIONS_PATH can override the location.
+This file is outside public/ and has no public listing endpoint. Back it up
+if you want to retain submissions across deployments.
+
+Run npm run suggestions locally to review questions grouped by frequency.
+Verify missing information against official university documents, update files
+in documents/, run npm run ingest -- documents, then restart Maki. Archive
+reviewed submissions manually after addressing them. Suggestions cannot grant
+themselves authority or change the assistant's rules.

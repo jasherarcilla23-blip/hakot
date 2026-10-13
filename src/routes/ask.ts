@@ -1,5 +1,5 @@
 import express from "express";
-import { askRAG } from "../rag";
+import { askRAG, REFUSAL } from "../rag";
 
 const router = express.Router();
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -35,7 +35,9 @@ router.post("/ask", async (req, res) => {
     return;
   }
   try {
-    res.json(await askRAG(question));
+    const result = await askRAG(question);
+    const unanswered = result.answer === REFUSAL || /^I couldn't find enough reliable information/i.test(result.answer);
+    res.json({ ...result, unanswered });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal server error" });
