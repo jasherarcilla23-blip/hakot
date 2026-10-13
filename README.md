@@ -1,0 +1,2 @@
+# hakot
+umak infotech olympics
