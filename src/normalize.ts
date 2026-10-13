@@ -3,7 +3,7 @@
 const vocabulary = [
   "university", "makati", "scholarship", "scholarships", "requirement", "requirements",
   "registrar", "admission", "admissions", "enrollment", "medical", "dental", "clinic",
-  "building", "campus", "office", "offices", "college", "colleges", "location",
+  "library", "libraries", "building", "campus", "office", "offices", "college", "colleges", "location",
   "locations", "computer", "information", "technology",
 ];
 const explicitTypos: Record<string, string> = {
@@ -42,6 +42,10 @@ export function normalizeForRetrieval(question: string): string {
     const matches = vocabulary.filter(candidate => oneEditApart(lower, candidate));
     return matches.length === 1 ? matches[0] : word;
   });
-  return corrected.replace(/\buniversity\s+of\s+makati(?:\s*\(UMak\))?|\bUMak\b/gi,
+  const named = corrected
+    .replace(/\b(?:school of law|law)\s+library\b(?!\s+learning\s+commons)/gi, "School of Law Library Learning Commons")
+    .replace(/\blibrary\b(?!\s+learning\s+commons)/gi, "Library Learning Commons")
+    .replace(/\bLLC\b/gi, "Library Learning Commons");
+  return named.replace(/\buniversity\s+of\s+makati(?:\s*\(UMak\))?|\bUMak\b/gi,
     "University of Makati");
 }

@@ -10,6 +10,8 @@ fs.readFileSync = function (file, ...args) {
     { title: "CAMPUS-MAP.txt", locator: "Admin / Ground", text: "Medical and Dental Clinic (MDC) is located in ADMIN BUILDING, Ground Floor.", embedding: [1, 0] },
     { title: "CAMPUS-MAP.txt", locator: "HPSB / Eleventh", text: "Clinic is located in HPSB, Eleventh Floor.", embedding: [1, 0] },
     { title: "CAMPUS-MAP.txt", locator: "Admin / Mezzanine", text: "Office of the University Registrar (OUR) is located in ADMIN BUILDING, Mezzanine.", embedding: [1, 0] },
+    { title: "CAMPUS-MAP.txt", locator: "Admin / Second / South Wing", text: "Library Learning Commons (LLC) is located in ADMIN BUILDING, Second Floor, B. South Wing.", embedding: [1, 0] },
+    { title: "CAMPUS-MAP.txt", locator: "HPSB / Fifth", text: "School of Law Library Learning Commons is located in HPSB, Fifth Floor.", embedding: [1, 0] },
     { title: "UMAK-OFFICES", locator: "Medical and Dental Office", text: "Provides health services.", embedding: [1, 0] },
   ]);
   return originalRead.call(this, file, ...args);
@@ -35,5 +37,16 @@ test("multiple explicitly named locations remain available for compound question
     const results = await search("Where are the Medical and Dental Clinic and Office of the University Registrar?");
     assert.deepEqual(results.map(result => result.locator), ["Admin / Ground", "Admin / Mezzanine"]);
     assert.equal((await search("What services are available?")).length, 3);
+  } finally { embeddings.embed = originalEmbed; }
+});
+test("UMAK library questions retrieve the main library location, not the law library", async () => {
+  embeddings.embed = async () => [[1, 0]];
+  try {
+    for (const question of ["where is the UMAK library", "where is the University of Makati library", "where is the umka libary"]) {
+      const results = await search(question);
+      assert.equal(results.length, 1);
+      assert.equal(results[0].locator, "Admin / Second / South Wing");
+    }
+    assert.equal((await search("where is the law library"))[0].locator, "HPSB / Fifth");
   } finally { embeddings.embed = originalEmbed; }
 });

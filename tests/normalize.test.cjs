@@ -44,3 +44,10 @@ test("output guards check secrets before and after name expansion", () => {
     if (previous === undefined) delete process.env.API_KEY; else process.env.API_KEY = previous;
   }
 });
+test("library aliases resolve to official names without confusing the law library", () => {
+  assert.equal(normalizeForRetrieval("where is the UMAK library"), "where is the University of Makati Library Learning Commons");
+  assert.equal(normalizeForRetrieval("where is the umka libary"), "where is the University of Makati Library Learning Commons");
+  assert.equal(normalizeForRetrieval("where is the law library"), "where is the School of Law Library Learning Commons");
+  assert.equal(normalizeForRetrieval("where is LLC"), "where is Library Learning Commons");
+  assert.equal(normalizeForRetrieval("Library Learning Commons"), "Library Learning Commons");
+});
